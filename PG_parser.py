@@ -1,7 +1,130 @@
 import pathlib
 import time, os
-from DTA_text_analyser import GermanCityDeLatiniser as delat, PunctuationRemover, WordLabeler
 
+
+
+def PunctuationRemover(wordsstring, normalise_spelling=False, return_list=True):
+    a = wordsstring
+    if normalise_spelling == True:
+        a = wordsstring.replace('oͤ', 'ö').replace('Oͤ', 'Ö').replace('aͤ', 'ä').replace('Aͤ', 'Ä').replace('uͤ', 'ü').replace('Uͤ', 'Ü')\
+            .replace('ſ', 's').replace('æ', 'ae').replace('ï', 'i').replace('ꝛc', 'etc').replace('Ï', 'I').replace('Æ', 'Ae').replace('/', ' ')\
+            .replace('-', '').replace('̃n', 'n').replace('̃N', 'N')
+    translator = str.maketrans('', '', string.punctuation) # This uses the 3-argument version of str.maketrans with arguments (x, y, z) where 'x' and 'y' must be equal-length strings and characters in 'x'  are replaced by characters in 'y'. 'z'  is a string (string.punctuation here) where each character in the string is mapped to None     f.translate(str.maketrans("",""), string.punctuation) #then the translator is passed on to the translate function in string
+    g = a.translate(translator)
+    h = re.sub('(«|»)', '', g)
+    if return_list == True:
+        h = h.split()
+    return h
+
+  
+ def GermanCityDeLatiniser(wordstring):
+    string = ''
+    for word in wordstring.split():
+        if word in gss.Latin_to_German_cities:
+            string += gss.Latin_to_German_cities.get(word) + ' '
+        else:
+            string += word + ' '
+    return string
+
+  
+ def WordLabeler(wordlist): #make sure punctuation is removed in the wordlist, otherwise it won't return, say, a city if is followed by punctuation
+    h = [] #ultimately for this to work, the wordlist has to go through the suffixremover first## should the suffixremover be built in?
+    # lang = [x for x in gss.languages[0]] #list comprehension is needed because str(gss.languages) would match any string-part of the languages in the language list with the word (e.g. 'ich' in 'Österreich'). The [0] is needed because the countries are read as a list from the file via list comprehension which creates a list of lists. Thus e.g. countries[0] is the first list (of the countries list) which is the list containing all countries.
+    coun = [x for x in gss.countries.split()]
+    ita = [x for x in gss.Italian_cities.split()]
+    fre = [x for x in gss.French_cities.split()]
+    ger = [x for x in gss.German_cities.split()]
+    aus = [x for x in gss.Austrian_cities.split()]
+    reg = [x for x in gss.German_regions.split()]
+    tc = gss.territorial_classifiers#[x for x in gss.territorial_classifiers]
+    # dia = [x for x in gss.German_dialects.split()]
+    uk = [x for x in gss.UK_cities.split()]
+    pol = [x for x in gss.Polish_cities.split()]
+    swiss = [x for x in gss.Swiss_cities.split()]
+    span = [x for x in gss.Spanish_cities.split()]
+    spec = [x for x in gss.special_cases.split()]
+
+    for index, word in enumerate((wordlist)): #should this be build in as a second-order conditional?: 'or wordlist[index - 1] not in gss.loc_prepositions and wordlist[index - 1] not in gss.loc_prepositions_caps'
+        # if word in lang:
+        #     h.extend(('LANGUAGE:', word))
+        if word in spec:
+            if wordlist[index - 8: index + 8] in tc or wordlist[index - 1] in gss.loc_prepositions \
+                    or wordlist[index - 1] in gss.loc_prepositions_caps:
+                h.extend(('GERMAN_CITY:', word))
+        if word[:-1] in spec:
+            if wordlist[index - 8: index + 8] in tc or wordlist[index - 1] in gss.loc_prepositions \
+                    or wordlist[index - 1] in gss.loc_prepositions_caps:
+                h.extend(('GERMAN_CITY:', word[:-1]))
+        if wordlist[index - 1] not in gss.determiners and wordlist[index - 1] not in tc \
+                or wordlist[index-5: index+5] in tc: #to check whether the preceding word is a determiner, which would likely indicate that it is not a city (e.g. 'Essen' == Stadt, 'das Essen'== food) or a territorial classifiers are used in the surroundings of the word
+            if word in ger:
+                h.extend(('GERMAN_CITY:', word))
+            if word in reg:
+                h.extend(('REGION_IN_GERMANY:', word))
+            if word in swiss:
+                h.extend(('SWISS_CITY:', word))
+            if word in pol:
+                h.extend(('POLISH_CITY:', word))
+            if word[-1:] == 's': #word[:-1] removes the last letter of word to check whether the word is used in genitive case with added 's'
+                if word[:-1] in ger:
+                    h.extend(('GERMAN_CITY:', word[:-1]))
+                if word[:-1] in reg:
+                    h.extend(('REGION_IN_GERMANY:', word[:-1]))
+                if word[:-1] in coun:
+                    h.extend(('COUNTRY:', word[:-1]))
+                if word[:-1] in span:
+                    h.extend(('SPANISH_CITY:', word[:-1]))
+                if word[:-1] in aus:
+                    h.extend(('AUSTRIAN_CITY:', word[:-1]))
+                if word[:-1] in fre:
+                    h.extend(('FRENCH_CITY:', word[:-1]))
+                if word[:-1] in ita:
+                    h.extend(('ITALIAN_CITY:', word[:-1]))
+                if word[:-1] in uk:
+                    h.extend(('UK_CITY:', word[:-1]))
+                if word[:-1] in swiss:
+                    h.extend(('SWISS_CITY:', word[:-1]))
+                if word[:-1] in pol:
+                    h.extend(('POLISH_CITY:', word[:-1]))
+            if word in span:
+                h.extend(('SPANISH_CITY:', word))
+            if word in aus:
+                h.extend(('AUSTRIAN_CITY:', word))
+            if word in fre:
+                h.extend(('FRENCH_CITY:', word))
+            if word in ita:
+                h.extend(('ITALIAN_CITY:', word))
+            if word in uk:
+                h.extend(('UK_CITY:', word))
+            if word in coun:
+                h.extend(('COUNTRY:', word))
+        # if word in dia:
+        #     h.extend(('GERMAN_DIALECT:', word))
+        # if word in tc:
+        #     h.extend(('TERRITORIAL CLASSIFICATION:', word))
+        # elif word not in h: #comment these two lines for just the list, otherwise gives complete list, not just langs, countries etc.
+        #     h.append(word) #comment these two lines for just the list, otherwise gives complete list, not just langs, countries etc.
+    # return h
+    ##uncomment all of below, if above lines are commented and vice versa
+    l = []
+    counter = 1
+    for i in range(1, len(h), 2):
+        if h[i] == '/':
+            continue
+        unique = True
+        l.append(h[0 + i - 1])  # appends the classifier
+        l.append(h[i])  # append the element in above-specified range (2n+1)
+        counter = 1
+        for j in range(i + 2, len(h), 2):  # then iterate over all the remaining (2n+1)+2 elements
+            if h[i] == h[j]:
+                h[j] = '/'
+                unique = False
+                counter += 1
+        if unique == False:  # this operation cannot be integrated into the 2nd loop (e.g. by l[i] = '/'), because then it would not go through the entire list with j to find all the matches with i. so in the following list [0, 'a', 2, 'b', 4, 'b', 6, 'c', 8, 'c', 10, 'a', 12, 'a'] the 'a' at index 11 would be matched in the j loop by the 'a' in index 2, but the 'a' in index 13 would not be ranged over anymore if after the match between index 2 and 11 l[i] would already be appended and replaced
+            h[i] = '/'
+            l.append(counter)  # to count how many times l[i] and l[j] were matched
+    return l 
+  
 
 def GP_parser(path_to_files: str, csv_filename: str, file_path_text_cleaner_output, text_cleaner=True, csv_header=False, author=False, title=False,
                    geodata=False, word_count=False, skip_translations=True, flush_buffer_n_write_to_file=True):
@@ -100,7 +223,7 @@ def GP_parser(path_to_files: str, csv_filename: str, file_path_text_cleaner_outp
                                 if geodata and skipper == False:
                                     try:
                                         temp_string = PunctuationRemover(string, normalise_spelling=True, return_list=False)
-                                        temp_string2 = delat(temp_string)
+                                        temp_string2 = GermanCityDeLatiniser(temp_string)
                                         temp_string3 = WordLabeler(temp_string2.split())
                                         gdata += ';' + str(temp_string3)
                                     except:
@@ -217,7 +340,7 @@ def GP_parser(path_to_files: str, csv_filename: str, file_path_text_cleaner_outp
 
 
 path = './Gutenberg cleaned files/'
-# path2 = 'C:/Users/jackewiebohne/Documents/python tests/DTA/Gutenberg ebooks/'
+# path2 = './Gutenberg ebooks/'
 csv = './DTA outputs/GP_csv.txt'
 text_clnr_output = './Gutenberg cleaned files/'
 x = GP_parser(path_to_files=path, csv_filename=csv, file_path_text_cleaner_output=text_clnr_output, csv_header=True, text_cleaner=False, author=True, title=True, word_count=True, geodata=True, skip_translations=False)
