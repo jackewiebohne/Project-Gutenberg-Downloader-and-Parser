@@ -37,7 +37,7 @@ def GutenbergZipDownloader(zip_links, counter_start:int, path_to_files:str):
     return fails
 
 counter_start = 0
-start_url = 'http://www.gutenberg.org/robot/harvest?&filetypes[]=txt&langs[]=de' #change ending of this string for other languages
+start_url = 'http://www.gutenberg.org/robot/harvest?&filetypes[]=txt&langs[]=de' #change ending of this string for other languages, e.g. 'en'  for English
 path_to_files = './Gutenberg ebooks/'
 x = IterateThroughGutenbergPages(start_url)
 y = GutenbergZipDownloader(empty_lst, counter_start, path_to_files=path_to_files)
