@@ -1,8 +1,7 @@
 import pandas as pd
 from German_spelling_and_stopwords import non_european_countries
 
-# header = ['id','date','surname', 'firstname', 'publishing location', 'text class']
-df = pd.read_csv('C:/Users/jackewiebohne/Documents/python tests/DTA/DTA outputs/GP_csv.txt', sep=';', encoding='utf8', error_bad_lines=False)
+df = pd.read_csv('./GP_csv.txt', sep=';', encoding='utf8', error_bad_lines=False)
 df.pop('id')
 
 def varcharRemover(path_to_files, df_geodata_column, sep=';', sep_count=4): #sep_count is the number of separators until we get to the geodata column
@@ -255,17 +254,3 @@ def relativeGeodata(df, df_word_count_column):
     df['rel. no of non-European georeferences'] = (df['non-european georeferences'] / df_word_count_column) * 1000
     df['rel. no of unique georeferences'] = (df['no of unique georeferences'] / df_word_count_column) * 1000
     return
-
-###setting up function parameters###
-path_to_files = 'C:/Users/jackewiebohne/Documents/python tests/DTA/DTA outputs/GP_csv.txt'
-dataframe_column = df['geodata']
-
-###calling the functions###
-x = varcharRemover(path_to_files, df_geodata_column=dataframe_column)
-y = DataSplitter(df_geodata_column=dataframe_column, df=df)
-z = uniqueGeodata(df_geodata_column=dataframe_column, df=df)
-w = relativeGeodata(df=df, df_word_count_column=df['word count of text'])
-
-# print(df.describe())
-
-df.to_csv(r'C:/Users/jackewiebohne/Documents/python tests/DTA/DTA outputs/GP_filed_geodata.csv', index=False, sep=';', encoding='utf-8-sig')
