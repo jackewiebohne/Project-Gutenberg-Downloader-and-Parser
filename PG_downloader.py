@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # type: ignore
 import requests
 from typing import List, Final
 import sys
@@ -28,7 +28,7 @@ def fetch_books(zip_links: List[str], path_to_files: str):
             download = requests.get(zip, stream=True)
             print('Downloading file no ' + str(i) + '. Progress: ' + str(round(i/len(zip_links)*100)) + '%')
 
-            file_name: Final[str] = path_to_files + str(i) + '.zip'
+            file_name: str = path_to_files + str(i) + '.zip'
             with open(file_name, 'wb') as f:
                 for dl in download.iter_content():
                     f.write(dl)
@@ -48,12 +48,12 @@ if __name__ == '__main__':
         print('Usage: python PG_Downloader.py language_code download_directory')
         print('Example: python PG_Downloader.py en books')
         exit(1)
-    lang: str = sys.argv[1]
-    directory: str = sys.argv[2]
+    lang: Final[str] = sys.argv[1]
+    directory: Final[str] = sys.argv[2]
 
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    url = 'http://www.gutenberg.org/robot/harvest?&filetypes[]=txt&langs[]=' + lang
+    url: Final[str] = 'http://www.gutenberg.org/robot/harvest?&filetypes[]=txt&langs[]=' + lang
 
     fetch_books(get_zip_urls(url), f'./{directory}/')
