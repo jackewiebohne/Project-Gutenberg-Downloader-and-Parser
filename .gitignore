@@ -1,0 +1,4 @@
+.mypy_cache
+.vscode
+gutenberg_env
+books

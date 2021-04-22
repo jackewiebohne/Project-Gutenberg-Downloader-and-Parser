@@ -1,43 +1,59 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # type: ignore
 import requests
+from typing import List, Final
+import sys
+from pathlib import Path
+import os
+from zipfile import ZipFile
 
-empty_lst = []
-def IterateThroughGutenbergPages(start_url): #recursively iterates through all the pages & stores all the links to the zip files in a list
-    try:
-        print('downloading links')
-        response = requests.get(start_url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        zip_links = [link.get('href') for link in soup.find('p').find_all_next('a')]
-        main_pages = 'http://www.gutenberg.org/robot/' + zip_links[-1]
-        empty_lst.append(zip_links[:-1])
-        func_call = IterateThroughGutenbergPages(main_pages)
-    except:
-        pass
-    return
+def get_zip_urls(url: str, zip_urls:List[str]=[]):
+        print(f'Downloading links from {url}')
+        response = requests.get(url)
+        if (response.status_code==200):
+            soup = BeautifulSoup(response.text, 'html.parser')
+            zip_links = [link.get('href') for link in soup.find('p').find_all_next('a')]
+            if (len(zip_links)>0):
+                main_pages = 'http://www.gutenberg.org/robot/' + zip_links[-1]
+                return get_zip_urls(main_pages, zip_urls + zip_links[:-1])
+
+        return zip_urls
 
 
-fails = []
-def GutenbergZipDownloader(zip_links, counter_start:int, path_to_files:str):
-    i = counter_start
-    try:
-        for lst in zip_links:
-            for zip in lst:
-                i += 1
-                download = requests.get(zip, stream=True)
-                print('downloading file no ' + str(i) + '. Progress: ' + str(round(i/len(zip_links), 2)) + '%')
-                try:
-                    with open(path_to_files + str(i) + '.zip', 'wb') as f:
-                        for dl in download.iter_content(1024): # this is the max file size it's supposed to read to memory
-                            f.write(dl)
-                except:
-                    fails.append(i)
-                    continue
-    except:
-        print(fails)
-    return fails
+def fetch_books(zip_links: List[str], path_to_files: str):
+    i:int = 0
 
-counter_start = 0
-start_url = 'http://www.gutenberg.org/robot/harvest?&filetypes[]=txt&langs[]=de' #change ending of this string for other languages, e.g. 'en'  for English
-path_to_files = './Gutenberg ebooks/'
-x = IterateThroughGutenbergPages(start_url)
-y = GutenbergZipDownloader(empty_lst, counter_start, path_to_files=path_to_files)
+    for zip in zip_links:
+        try:
+            i += 1
+            download = requests.get(zip, stream=True)
+            print('Downloading file no ' + str(i) + '. Progress: ' + str(round(i/len(zip_links)*100)) + '%')
+
+            file_name: str = path_to_files + str(i) + '.zip'
+            with open(file_name, 'wb') as f:
+                for dl in download.iter_content():
+                    f.write(dl)
+
+            with ZipFile(file_name) as z:
+                z.extractall(path_to_files)
+
+            os.remove(file_name)
+
+        except KeyboardInterrupt:
+            exit(0)
+        except:
+            print(f'Could not download {zip}')
+
+if __name__ == '__main__':
+    if len(sys.argv)!=3:
+        print('Usage: python PG_Downloader.py language_code download_directory')
+        print('Example: python PG_Downloader.py en books')
+        exit(1)
+    lang: Final[str] = sys.argv[1]
+    directory: Final[str] = sys.argv[2]
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    url: Final[str] = 'http://www.gutenberg.org/robot/harvest?&filetypes[]=txt&langs[]=' + lang
+
+    fetch_books(get_zip_urls(url), f'./{directory}/')
